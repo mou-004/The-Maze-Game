@@ -1,51 +1,33 @@
 import React, { useEffect, useState } from "react";
 import "./App.css";
 
-const ROWS = 31;
-const COLS = 31;
+const GAME_TIME = 40;
 
-function generateMaze() {
-  const maze = Array.from({ length: ROWS }, () => Array(COLS).fill("#"));
-
-  function carve(r, c) {
-    maze[r][c] = " ";
-
-    const dirs = [
-      [0, 2],
-      [0, -2],
-      [2, 0],
-      [-2, 0],
-    ].sort(() => Math.random() - 0.5);
-
-    for (let [dr, dc] of dirs) {
-      const nr = r + dr;
-      const nc = c + dc;
-
-      if (
-        nr > 0 &&
-        nr < ROWS - 1 &&
-        nc > 0 &&
-        nc < COLS - 1 &&
-        maze[nr][nc] === "#"
-      ) {
-        maze[r + dr / 2][c + dc / 2] = " ";
-        carve(nr, nc);
-      }
-    }
-  }
-
-  carve(1, 1);
-
-  maze[1][1] = "P";
-  maze[ROWS - 2][COLS - 2] = "E";
-
-  return maze.map((row) => row.join(""));
-}
+const maze = [
+  "#####################",
+  "#P    #       #     #",
+  "##### # ##### # ### #",
+  "#     #     # # #   #",
+  "# ######### # # # ###",
+  "# #       # #   #   #",
+  "# # ##### # ####### #",
+  "# # #   # #       # #",
+  "# # # # # ####### # #",
+  "#   # # #       #   #",
+  "##### # ####### ### #",
+  "#     #       #     #",
+  "# ########### ##### #",
+  "#       #     #     #",
+  "####### # ##### ### #",
+  "#       #       #   #",
+  "# ############# # ###",
+  "#               #  E#",
+  "#####################",
+];
 
 function App() {
-  const [maze, setMaze] = useState(generateMaze());
   const [player, setPlayer] = useState({ row: 1, col: 1 });
-  const [timeLeft, setTimeLeft] = useState(120);
+  const [timeLeft, setTimeLeft] = useState(GAME_TIME);
   const [status, setStatus] = useState("playing");
   const [moves, setMoves] = useState(0);
 
@@ -65,28 +47,28 @@ function App() {
     return () => clearInterval(timer);
   }, [status]);
 
-  const movePlayer = (dir) => {
+  const movePlayer = (direction) => {
     if (status !== "playing") return;
 
-    let r = player.row;
-    let c = player.col;
+    let newRow = player.row;
+    let newCol = player.col;
 
-    if (dir === "up") r--;
-    if (dir === "down") r++;
-    if (dir === "left") c--;
-    if (dir === "right") c++;
+    if (direction === "up") newRow--;
+    if (direction === "down") newRow++;
+    if (direction === "left") newCol--;
+    if (direction === "right") newCol++;
 
     if (
-      r >= 0 &&
-      r < maze.length &&
-      c >= 0 &&
-      c < maze[0].length &&
-      maze[r][c] !== "#"
+      newRow >= 0 &&
+      newRow < maze.length &&
+      newCol >= 0 &&
+      newCol < maze[0].length &&
+      maze[newRow][newCol] !== "#"
     ) {
-      setPlayer({ row: r, col: c });
-      setMoves((m) => m + 1);
+      setPlayer({ row: newRow, col: newCol });
+      setMoves((prev) => prev + 1);
 
-      if (maze[r][c] === "E") {
+      if (maze[newRow][newCol] === "E") {
         setStatus("won");
       }
     }
@@ -94,20 +76,27 @@ function App() {
 
   useEffect(() => {
     const handleKey = (e) => {
-      if (e.key === "ArrowUp" || e.key.toLowerCase() === "w") movePlayer("up");
-      if (e.key === "ArrowDown" || e.key.toLowerCase() === "s") movePlayer("down");
-      if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") movePlayer("left");
-      if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") movePlayer("right");
+      const key = e.key.toLowerCase();
+
+      if (
+        ["arrowup", "arrowdown", "arrowleft", "arrowright", "w", "a", "s", "d"].includes(key)
+      ) {
+        e.preventDefault();
+      }
+
+      if (e.key === "ArrowUp" || key === "w") movePlayer("up");
+      if (e.key === "ArrowDown" || key === "s") movePlayer("down");
+      if (e.key === "ArrowLeft" || key === "a") movePlayer("left");
+      if (e.key === "ArrowRight" || key === "d") movePlayer("right");
     };
 
-    window.addEventListener("keydown", handleKey);
+    window.addEventListener("keydown", handleKey, { passive: false });
     return () => window.removeEventListener("keydown", handleKey);
-  });
+  }, [player, status]);
 
   const restartGame = () => {
-    setMaze(generateMaze());
     setPlayer({ row: 1, col: 1 });
-    setTimeLeft(120);
+    setTimeLeft(GAME_TIME);
     setStatus("playing");
     setMoves(0);
   };
@@ -119,16 +108,18 @@ function App() {
   };
 
   return (
-    <div className="app">
+    <div className="game-container">
       <h1>The Maze Game</h1>
-      <p>Find the exit before time ends.</p>
+      <p>A fixed-map maze escape game for beginners.</p>
 
-      <h2>Time Left: {formatTime()}</h2>
-      <h3>Moves: {moves}</h3>
+      <div className="info">
+        <h2>Time Left: {formatTime()}</h2>
+        <h3>Moves: {moves}</h3>
+      </div>
 
       <div
         className="maze"
-        style={{ gridTemplateColumns: `repeat(${COLS}, 18px)` }}
+        style={{ gridTemplateColumns: `repeat(${maze[0].length}, 1fr)` }}
       >
         {maze.map((row, rowIndex) =>
           row.split("").map((cell, colIndex) => {
@@ -136,6 +127,7 @@ function App() {
 
             if (cell === "#") className += " wall";
             if (cell === "E") className += " exit";
+
             if (player.row === rowIndex && player.col === colIndex) {
               className += " player";
             }
@@ -155,7 +147,7 @@ function App() {
           <button onClick={() => movePlayer("down")}>Down</button>
           <button onClick={() => movePlayer("right")}>Right</button>
         </div>
-        <button onClick={restartGame}>Regenerate Maze</button>
+        <button onClick={restartGame}>Restart Game</button>
       </div>
     </div>
   );
