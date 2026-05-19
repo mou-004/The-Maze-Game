@@ -5,7 +5,7 @@ The Maze Game is a simple React-based maze escape game. The player has to move t
 ## Features
 
 - Fixed maze map
-- 60-second countdown timer
+- 40-second countdown timer
 - Player movement using keyboard
 - On-screen movement buttons
 - Move counter
