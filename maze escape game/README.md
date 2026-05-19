@@ -114,6 +114,4 @@ The player starts from P and the exit is E.
 
 The main benefit of this algorithm is that the maze is always solvable, because all paths are created from one starting point. So there will always be a connected route from the player to the exit.
 
-```bash
-npm install
-npm run dev
+
